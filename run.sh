@@ -22,13 +22,13 @@ do_command()
 ##
 server_kill()
 {
-    PS=`ps x | grep "[Ii]mage-server" | awk '{print $1}'`
-
-    if test x"$PS" != x""; then
+    PS=`ps x | grep "/tmp/[Ii]mage-server" | awk '{print $1}'`
+    
+    if test "$PS" = ""; then
+	echo "No image-server process"
+    else
 	echo "kill image-server: $PS"
 	kill $PS
-    else
-	echo "No image-server process"
     fi
 }
 
