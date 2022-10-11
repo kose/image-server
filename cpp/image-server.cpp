@@ -9,7 +9,7 @@ using std::endl;
 
 #include "image-server.hpp"
 
-DEFINE_string(i, (std::string)HOME_DIR + "/GoogleDrive/movies/1600x900_shinyokohama2.mp4", "movie filename");
+DEFINE_string(i, (std::string)HOME_DIR + "/GoogleDrive/movies/1024x600_shinyokohama2.mp4", "movie filename");
 
 DEFINE_int32(width, 1024, "width of output image");
 DEFINE_int32(height, 600, "width of output image"); // 1024x600: WSVGA(Wide-SVGA) 約16:10
