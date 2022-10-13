@@ -66,6 +66,11 @@ case "$@" in
 	FLAGS_my="-my -300"
         ;;
 
+    *set?_cam_?.mp4)
+	FLAGS_width="-width 720"
+	FLAGS_height="-height 540"
+        ;;
+
     *)
 	;;
 esac
@@ -131,7 +136,7 @@ COMMAND=$BUILDDIR/$COMMAND
 
 sh $CDIR/00make.sh $FLAGS_debug || exit -1
 
-do_command "$COMMAND $FLAGS_i $FLAGS_rotate $FLAGS_scale $FLAGS_mx $FLAGS_my"
+do_command "$COMMAND $FLAGS_i $FLAGS_rotate $FLAGS_scale $FLAGS_mx $FLAGS_my $FLAGS_width $FLAGS_height"
 
 exit 0
 
