@@ -31,7 +31,9 @@ int main(int argc, char *argv[])
 
     for (int frame_number = 0; ;frame_number++) {
 
-      imageserve.run();
+      if (imageserve.run() == false) {
+        break;
+      }
 
       if (frame_number % 1000 == 0) {
         cerr << "frame: " << frame_number << endl;

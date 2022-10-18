@@ -40,7 +40,7 @@ public:
   ~ImageServe() {}
 
   // 1フレーム処理
-  void run()
+  bool run()
   {
     // receive pull request
     {
@@ -64,15 +64,25 @@ public:
     cv::Mat image_in;
     capture >> image_in;
 
+#if 0
     if (image_in.empty()) {
       cerr << "rewind" << endl;
       capture.set(cv::CAP_PROP_POS_FRAMES, 0); // 巻き戻し
       capture >> image_in;
     }
-
+#else
+    if (image_in.empty()) {
+      cerr << "------ end of movie -----" << endl;
+      // send JPEG buffer
+      zmq::message_t message_send(1);
+      socket->send(message_send);
+      return false;
+    }
+#endif
+  
     cv::Mat image_proc;
-    cv::warpAffine(image_in, image_proc, affine_matrix, cv::Size(width, height)); // WSVGA(Wide-SVGA) 約16:10
-    
+  cv::warpAffine(image_in, image_proc, affine_matrix, cv::Size(width, height)); // WSVGA(Wide-SVGA) 約16:10
+  
 #if _DEBUG_
     cv::imshow("server", image_in);
 
@@ -96,6 +106,7 @@ public:
 
       socket->send(message_send);
     }
+    return true;
   }
   
 private:

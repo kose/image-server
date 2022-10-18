@@ -36,37 +36,37 @@ server_kill()
 ## 
 ##
 case "$@" in
-    *Kabukicho_2022-05-23_1800.mp4)
+    *Kabukicho_2022-05-23_1800.mp4*)
 	FLAGS_scale="-scale 1.1"
 	FLAGS_mx="-mx -880"
 	FLAGS_my="-my -320"
         ;;
 
-    *1920x1080_shinyokohama2.mp4)
+    *1920x1080_shinyokohama2.mp4*)
 	FLAGS_scale="-scale 0.85"
 	FLAGS_mx="-mx -100"
 	FLAGS_my="-my -60"
         ;;
 
-    *QueensSquare2.mp4)
+    *QueensSquare2.mp4*)
 	FLAGS_scale="-scale 0.9"
 	FLAGS_mx="-mx -100"
 	FLAGS_my="-my -60"
         ;;
 
-    *QueensSquare4.mp4)
+    *QueensSquare4.mp4*)
 	FLAGS_scale="-scale 1.0"
 	FLAGS_mx="-mx -120"
 	FLAGS_my="-my -230"
         ;;
 
-    *machida2f.mp4)
+    *machida2f.mp4*)
 	FLAGS_scale="-scale 0.8"
 	FLAGS_mx="-mx -120"
 	FLAGS_my="-my -300"
         ;;
 
-    *set?_cam_?.mp4)
+    *set?_cam_?.mp4*)
 	FLAGS_width="-width 720"
 	FLAGS_height="-height 540"
         ;;
