@@ -112,10 +112,16 @@ do
         -my)
 	    FLAGS_my="-my $2"; shift;;
 
+        -loop | --loop)
+	    FLAGS_loop="-loop"; shift;;
+
 	--kill)
 	    server_kill
 	    exit 0
 	    ;;
+
+        -port | --port)
+	    if [ "${2::1}" != "-" ]; then FLAGS_port="-port $2"; fi; shift;;
 
 	-*)
 	    echo "unknown: $1"
@@ -136,7 +142,7 @@ COMMAND=$BUILDDIR/$COMMAND
 
 sh $CDIR/00make.sh $FLAGS_debug || exit -1
 
-do_command "$COMMAND $FLAGS_i $FLAGS_rotate $FLAGS_scale $FLAGS_mx $FLAGS_my $FLAGS_width $FLAGS_height"
+do_command "$COMMAND $FLAGS_i $FLAGS_port $FLAGS_loop $FLAGS_rotate $FLAGS_scale $FLAGS_mx $FLAGS_my $FLAGS_width $FLAGS_height"
 
 exit 0
 

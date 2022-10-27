@@ -9,7 +9,9 @@ using std::endl;
 
 #include "image-server.hpp"
 
+DEFINE_string(port, "5555", "ZMQ server port number");
 DEFINE_string(i, (std::string)HOME_DIR + "/GoogleDrive/movies/1024x600_shinyokohama2.mp4", "movie filename");
+DEFINE_bool(loop, false, "Do loop?");
 
 DEFINE_int32(width, 1024, "width of output image");
 DEFINE_int32(height, 600, "width of output image"); // 1024x600: WSVGA(Wide-SVGA) 約16:10
@@ -27,7 +29,7 @@ int main(int argc, char *argv[])
   try {
     gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-    ImageServe imageserve(FLAGS_i, FLAGS_width, FLAGS_height, FLAGS_rotate, FLAGS_scale, FLAGS_mx, FLAGS_my);
+    ImageServe imageserve(FLAGS_port, FLAGS_loop, FLAGS_i, FLAGS_width, FLAGS_height, FLAGS_rotate, FLAGS_scale, FLAGS_mx, FLAGS_my);
 
     for (int frame_number = 0; ;frame_number++) {
 
@@ -35,9 +37,11 @@ int main(int argc, char *argv[])
         break;
       }
 
+#if 0
       if (frame_number % 1000 == 0) {
         cerr << "frame: " << frame_number << endl;
       }
+#endif
     }
     
     return EXIT_SUCCESS;
