@@ -18,8 +18,8 @@ public:
 
   // コンストラクタ
   ImageServe (const std::string port, const bool loop, const std::string moviefile, const int width, const int height,
-              const double rotate, const double scale, const int mx, const int my) :
-    loop(loop), width(width), height(height)
+              const double rotate, const double scale, const int mx, const int my, int start, int frames) :
+    loop(loop), width(width), height(height), start(start), frames(frames)
   {
     context = new zmq::context_t(1);
     socket = new zmq::socket_t(*context, ZMQ_REP);
@@ -31,6 +31,8 @@ public:
       throw std::runtime_error("Can not open VideoCapture: ");
     }
 
+    capture.set(cv::CAP_PROP_POS_FRAMES, start); // 巻き戻し
+
     affine_matrix = cv::getRotationMatrix2D(cv::Point2f(0.0, 0.0), rotate, scale);
 
     affine_matrix.at<double>(0, 2) = affine_matrix.at<double>(0, 0) * mx + affine_matrix.at<double>(0, 1) * my + affine_matrix.at<double>(0, 2);
@@ -38,6 +40,8 @@ public:
 
     cerr << affine_matrix << endl;
 
+    frame_number = 0;
+    
    backgroundsubtraction = new BackgroundSubtraction("");
   }
 
@@ -75,10 +79,11 @@ public:
 
       capture >> image_in;
 
-      if (image_in.empty()) {
+      if (image_in.empty() || frame_number > frames) {
         if (loop) {
-          // cerr << "rewind" << endl;
-          capture.set(cv::CAP_PROP_POS_FRAMES, 0); // 巻き戻し
+          cerr << "rewind " << frame_number << endl;
+          capture.set(cv::CAP_PROP_POS_FRAMES, start); // 巻き戻し
+          frame_number = 0;
           capture >> image_in;
         } else {
           cerr << "------ end of movie -----" << endl;
@@ -127,6 +132,8 @@ public:
     }
 #endif
 
+    frame_number++;
+    
     return true;
   }
 
@@ -143,7 +150,11 @@ private:
   const bool loop;
   const int width;
   const int height;
+  const int start;
+  const int frames;
 
+  int frame_number; 
+  
    BackgroundSubtraction *backgroundsubtraction; ///< 背景差分
   bool background;                               ///< 背景シェアフラグ
 };

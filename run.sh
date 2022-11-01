@@ -71,6 +71,33 @@ case "$@" in
 	FLAGS_height="-height 540"
         ;;
 
+    *ES0_1_A.mp4*)
+	FLAGS_scale="-scale 0.7"
+	FLAGS_mx="-mx -100"
+	FLAGS_my="-my -380"
+	FLAGS_rotate="-rotate -18"
+	FLAGS_start="-start 87"
+	FLAGS_frames="-frames 1600"
+        ;;
+
+    *ES0_1_B.mp4*)
+	FLAGS_scale="-scale 0.57"
+	FLAGS_mx="-mx -50"
+	FLAGS_my="-my 200"
+	FLAGS_rotate="-rotate 10"
+	FLAGS_start="-start 82"
+	FLAGS_frames="-frames 1600"
+        ;;
+
+    *ES0_1_C.mp4*)
+	FLAGS_scale="-scale 0.57"
+	FLAGS_mx="-mx -50"
+	FLAGS_my="-my 40"
+	FLAGS_rotate="-rotate 4"
+	FLAGS_start="-start 68"
+	FLAGS_frames="-frames 1600"
+        ;;
+
     *)
 	;;
 esac
@@ -142,7 +169,7 @@ COMMAND=$BUILDDIR/$COMMAND
 
 sh $CDIR/00make.sh $FLAGS_debug || exit -1
 
-do_command "$COMMAND $FLAGS_i $FLAGS_port $FLAGS_loop $FLAGS_rotate $FLAGS_scale $FLAGS_mx $FLAGS_my $FLAGS_width $FLAGS_height"
+do_command "$COMMAND $FLAGS_i $FLAGS_port $FLAGS_loop $FLAGS_rotate $FLAGS_scale $FLAGS_mx $FLAGS_my $FLAGS_width $FLAGS_height $FLAGS_start $FLAGS_frames"
 
 exit 0
 

@@ -19,6 +19,8 @@ DEFINE_double(rotate, 0.0, "rotate image");
 DEFINE_double(scale, 1.0, "scale image");
 DEFINE_int32(mx, 0, "move x axis");
 DEFINE_int32(my, 0, "move y axis");
+DEFINE_int32(start, 0, "start frame");
+DEFINE_int32(frames, 100000, "totale frames");
 
 
 //
@@ -29,7 +31,8 @@ int main(int argc, char *argv[])
   try {
     gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-    ImageServe imageserve(FLAGS_port, FLAGS_loop, FLAGS_i, FLAGS_width, FLAGS_height, FLAGS_rotate, FLAGS_scale, FLAGS_mx, FLAGS_my);
+    ImageServe imageserve(FLAGS_port, FLAGS_loop, FLAGS_i, FLAGS_width, FLAGS_height, FLAGS_rotate, FLAGS_scale, FLAGS_mx, FLAGS_my,
+                          FLAGS_start, FLAGS_frames);
 
     for (int frame_number = 0; ;frame_number++) {
 
