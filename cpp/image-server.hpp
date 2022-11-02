@@ -81,7 +81,7 @@ public:
 
       if (image_in.empty() || frame_number > frames) {
         if (loop) {
-          cerr << "rewind " << frame_number << endl;
+          // cerr << "rewind " << frame_number << endl;
           capture.set(cv::CAP_PROP_POS_FRAMES, start); // 巻き戻し
           frame_number = 0;
           capture >> image_in;
