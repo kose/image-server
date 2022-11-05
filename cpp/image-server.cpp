@@ -12,6 +12,7 @@ using std::endl;
 DEFINE_string(port, "5555", "ZMQ server port number");
 DEFINE_string(i, (std::string)HOME_DIR + "/GoogleDrive/movies/1024x600_shinyokohama2.mp4", "movie filename");
 DEFINE_bool(loop, false, "Do loop?");
+DEFINE_bool(flip, false, "Do flip?");
 
 DEFINE_int32(width, 1024, "width of output image");
 DEFINE_int32(height, 600, "width of output image"); // 1024x600: WSVGA(Wide-SVGA) 約16:10
@@ -20,7 +21,7 @@ DEFINE_double(scale, 1.0, "scale image");
 DEFINE_int32(mx, 0, "move x axis");
 DEFINE_int32(my, 0, "move y axis");
 DEFINE_int32(start, 0, "start frame");
-DEFINE_int32(frames, 100000, "totale frames");
+DEFINE_int32(frames, 1000000, "totale frames");
 
 
 //
@@ -31,8 +32,8 @@ int main(int argc, char *argv[])
   try {
     gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-    ImageServe imageserve(FLAGS_port, FLAGS_loop, FLAGS_i, FLAGS_width, FLAGS_height, FLAGS_rotate, FLAGS_scale, FLAGS_mx, FLAGS_my,
-                          FLAGS_start, FLAGS_frames);
+    ImageServe imageserve(FLAGS_port, FLAGS_loop, FLAGS_flip, FLAGS_i, FLAGS_width, FLAGS_height, FLAGS_rotate, FLAGS_scale,
+                          FLAGS_mx, FLAGS_my, FLAGS_start, FLAGS_frames);
 
     for (int frame_number = 0; ;frame_number++) {
 

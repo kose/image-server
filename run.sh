@@ -120,6 +120,10 @@ do
 	    FLAGS_debug="--debug"
 	    ;;
 
+	-flip | --flip)
+	    FLAGS_flip="--flip"
+	    ;;
+
 	-h | --help)
 	    echo $USAGE
 	    exit 0;;
@@ -128,7 +132,7 @@ do
 	    if [ "${2::1}" != "-" ]; then FLAGS_i="-i $2"; fi; shift;;
 
         -r | --rotate)
-	    if [ "${2::1}" != "-" ]; then FLAGS_rotate="-rotate $2"; fi; shift;;
+	    FLAGS_rotate="-rotate $2"; shift;;
 
         -s | --scale)
 	    if [ "${2::1}" != "-" ]; then FLAGS_scale="-scale $2"; fi; shift;;
@@ -140,7 +144,8 @@ do
 	    FLAGS_my="-my $2"; shift;;
 
         -loop | --loop)
-	    FLAGS_loop="-loop"; shift;;
+	    FLAGS_loop="-loop";
+	    ;;
 
 	--kill)
 	    server_kill
@@ -169,7 +174,7 @@ COMMAND=$BUILDDIR/$COMMAND
 
 sh $CDIR/00make.sh $FLAGS_debug || exit -1
 
-do_command "$COMMAND $FLAGS_i $FLAGS_port $FLAGS_loop $FLAGS_rotate $FLAGS_scale $FLAGS_mx $FLAGS_my $FLAGS_width $FLAGS_height $FLAGS_start $FLAGS_frames"
+do_command "$COMMAND $FLAGS_i $FLAGS_port $FLAGS_loop $FLAGS_flip $FLAGS_rotate $FLAGS_scale $FLAGS_mx $FLAGS_my $FLAGS_width $FLAGS_height $FLAGS_start $FLAGS_frames"
 
 exit 0
 

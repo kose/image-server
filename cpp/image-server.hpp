@@ -17,9 +17,9 @@ class ImageServe {
 public:
 
   // コンストラクタ
-  ImageServe (const std::string port, const bool loop, const std::string moviefile, const int width, const int height,
+  ImageServe (const std::string port, const bool loop, const bool flip, const std::string moviefile, const int width, const int height,
               const double rotate, const double scale, const int mx, const int my, int start, int frames) :
-    loop(loop), width(width), height(height), start(start), frames(frames)
+    loop(loop), flip(flip), width(width), height(height), start(start), frames(frames)
   {
     context = new zmq::context_t(1);
     socket = new zmq::socket_t(*context, ZMQ_REP);
@@ -98,6 +98,10 @@ public:
       // アフィン変換
       //
       cv::warpAffine(image_in, image_proc, affine_matrix, cv::Size(width, height)); // WSVGA(Wide-SVGA) 約16:10
+
+      if (flip) {
+        cv::flip(image_proc, image_proc, 1);
+      }
     }
 
     //
@@ -148,6 +152,7 @@ private:
    cv::Mat affine_matrix;       ///< アフィン変換行列
 
   const bool loop;
+  const bool flip;
   const int width;
   const int height;
   const int start;
