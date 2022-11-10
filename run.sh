@@ -69,6 +69,7 @@ case "$@" in
     *set?_cam_?.mp4*)
 	FLAGS_width="-width 720"
 	FLAGS_height="-height 540"
+	FLAGS_frames="-frames 9100"   # 9118
         ;;
 
     *ES0_1_A.mp4*)
