@@ -81,6 +81,15 @@ case "$@" in
 	FLAGS_frames="-frames 3340"
         ;;
 
+    *ES0_1_A_20fps_fix.mp4*)
+	FLAGS_scale="-scale 1.25"
+	FLAGS_mx="-mx -430"
+	FLAGS_my="-my -435"
+	FLAGS_rotate="-rotate -18"
+	FLAGS_start="-start 87"
+	FLAGS_frames="-frames 3340"
+        ;;
+
     *ES0_1_B.mp4*)
 	FLAGS_scale="-scale 0.57"
 	FLAGS_mx="-mx -50"
