@@ -1,0 +1,3 @@
+[submodule "cpp/inference-engine"]
+	path = cpp/inference-engine
+	url = https://github.com/kose/inference-engine.git
