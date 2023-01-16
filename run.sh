@@ -119,6 +119,10 @@ esac
 while [ $# -gt 0 ]
 do
     case $1 in
+	-bone | --bone)
+	    FLAGS_bone="--bone"
+	    ;;
+
 	--clean)
 	    sh $CDIR/00make.sh --clean
 	    ;;
@@ -184,7 +188,7 @@ COMMAND=$BUILDDIR/$COMMAND
 
 sh $CDIR/00make.sh $FLAGS_debug || exit -1
 
-do_command "$COMMAND $FLAGS_i $FLAGS_port $FLAGS_loop $FLAGS_flip $FLAGS_rotate $FLAGS_scale $FLAGS_mx $FLAGS_my $FLAGS_width $FLAGS_height $FLAGS_start $FLAGS_frames"
+do_command "$COMMAND $FLAGS_i $FLAGS_port $FLAGS_loop $FLAGS_flip $FLAGS_rotate $FLAGS_scale $FLAGS_mx $FLAGS_my $FLAGS_width $FLAGS_height $FLAGS_start $FLAGS_frames $FLAGS_bone"
 
 exit 0
 

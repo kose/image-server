@@ -1,7 +1,7 @@
 // Copyright (C) 2020-2022 KOSEKI Yoshinori
 ///
-/// @file  pipeline-mapping.hpp
-/// @brief パイプライン：地図上にプロット
+/// @file  image-server.hpp
+/// @brief 動画像サーバ
 /// @author KOSEKI Yoshinori <koseki.y@saxa.co.jp>
 ///
 
@@ -9,6 +9,8 @@
 
 #include <cstring>
 #include "background-subtraction.hpp"
+#include "inference-engine/hpe_model_openpose.h"
+#include "inference-engine/human-pose-estimation.hpp"
 
 //
 // イメージサーバー
@@ -18,8 +20,8 @@ public:
 
   // コンストラクタ
   ImageServe (const std::string port, const bool loop, const bool flip, const std::string moviefile, const int width, const int height,
-              const double rotate, const double scale, const int mx, const int my, int start, int frames) :
-    loop(loop), flip(flip), width(width), height(height), start(start), frames(frames)
+              const double rotate, const double scale, const int mx, const int my, int start_frame, int end_frame, bool bonedetect) :
+    loop(loop), flip(flip), width(width), height(height), start_frame(start_frame), end_frame(end_frame), num_queue(1)
   {
     context = new zmq::context_t(1);
     socket = new zmq::socket_t(*context, ZMQ_REP);
@@ -31,7 +33,7 @@ public:
       throw std::runtime_error("Can not open VideoCapture: ");
     }
 
-    capture.set(cv::CAP_PROP_POS_FRAMES, start); // 巻き戻し
+    capture.set(cv::CAP_PROP_POS_FRAMES, start_frame); // 巻き戻し
 
     affine_matrix = cv::getRotationMatrix2D(cv::Point2f(0.0, 0.0), rotate, scale);
 
@@ -42,7 +44,13 @@ public:
 
     frame_number = 0;
     
-   backgroundsubtraction = new BackgroundSubtraction("");
+    backgroundsubtraction = new BackgroundSubtraction("");
+
+    if (bonedetect) {
+      detector = new BoneDetection(core, "CPU", (std::string)HOME_DIR + "/openvino/IR/FP16/human-pose-estimation-0001.xml", num_queue);
+    } else {
+      detector = nullptr;
+    }
   }
 
   // デストラクタ
@@ -50,10 +58,29 @@ public:
     delete backgroundsubtraction;
   }
 
+  //
+  // モード: C++ に enemerate ってないの？
+  //
+  int get_mode(const char* str)
+  {
+    std::vector<std::string> mode_table {"foreground", "background", "pafsBlob", "heatMapsBlob"};
+
+    for (int i = 0; i <  mode_table.size(); i++) {
+      if (std::strcmp(str, mode_table.at(i).c_str()) == 0) {
+        return i;
+      }
+    }
+    return 0; // if none, ret 0
+  }
+  
   // 1フレーム処理
   bool run()
   {
-    background = false;
+    int mode = -1;
+
+    float pafsBlob[HPEOpenPose::n_pafs];        ///< keypoint pairwise relations (part affinity fields)
+    float heatMapsBlob[HPEOpenPose::n_heatMap]; ///< keypoint heatmaps
+    HPEOpenPose hpe("");
     
     // receive pull request
     {
@@ -65,24 +92,20 @@ public:
       int size = message_recv.size();
       char buff[size];
       memcpy(&buff[0], (unsigned char*)message_recv.data(), size);
-
-      if (std::strcmp(buff, "background") == 0) {
-        background = true;
-        // cerr << "request: " << buff << endl;
-      }
+      mode = get_mode(buff);
     }
 
     //
     // input image
     //
-    if (background == false || image_in.empty()) {
+    if (mode == get_mode("foreground") || image_in.empty()) {
 
       capture >> image_in;
 
-      if (image_in.empty() || frame_number > frames) {
+      if (image_in.empty() || frame_number > end_frame) {
         if (loop) {
           // cerr << "rewind " << frame_number << endl;
-          capture.set(cv::CAP_PROP_POS_FRAMES, start); // 巻き戻し
+          capture.set(cv::CAP_PROP_POS_FRAMES, start_frame); // 巻き戻し
           frame_number = 0;
           capture >> image_in;
         } else {
@@ -102,34 +125,71 @@ public:
       if (flip) {
         cv::flip(image_proc, image_proc, 1);
       }
+      //
+      //
+      //
+      if (detector != nullptr) {
+        detector->Inference(image_proc);
+        image_proc = detector->getResults(pafsBlob, heatMapsBlob);
+      }
     }
 
     //
-    // send JPEG stream
+    // send JPEG stream: foreground or background
     //
-    cv::Mat image_send;
+    if (mode == get_mode("foreground") || mode == get_mode("background")) {
 
-    if (background) {
-      image_send = backgroundsubtraction->run(image_proc);
-    } else {
-      image_send = image_proc;
-    }
+      if (mode == get_mode("background")) {
+        image_send = backgroundsubtraction->run(image_proc);
+      } else {
+        image_send = image_proc;
+      }
       
-    // make jpeg
-    std::vector<unsigned char> buff;
-    std::vector<int> param = std::vector<int>(2);
-    param[0] = cv::IMWRITE_JPEG_QUALITY;
-    param[1] = 90;                // default(95) 0-100
-    imencode(".jpg", image_send, buff, param);
+      // make jpeg
+      std::vector<unsigned char> buff;
+      std::vector<int> param = std::vector<int>(2);
+      param[0] = cv::IMWRITE_JPEG_QUALITY;
+      param[1] = 90;                // default(95) 0-100
+      imencode(".jpg", image_send, buff, param);
 
-    // send JPEG buffer
-    zmq::message_t message_send(buff.size());
-    memcpy(message_send.data(), &buff[0], buff.size());
+      // send JPEG buffer
+      zmq::message_t message_send(buff.size());
+      memcpy(message_send.data(), &buff[0], buff.size());
 
-    socket->send(message_send);
+      socket->send(message_send);
+    }
 
-#if _DEBUG_
-    cv::imshow("server", image_send);
+    //
+    // send bone
+    //
+    if (mode == get_mode("pafsBlob")) {
+      int length = HPEOpenPose::n_pafs * sizeof(float);
+      zmq::message_t message_send(length);
+      memcpy(message_send.data(), &pafsBlob[0], length);
+      socket->send(message_send);
+    }
+    if (mode == get_mode("heatMapsBlob")) {
+      int length = HPEOpenPose::n_heatMap * sizeof(float);
+      zmq::message_t message_send(length);
+      memcpy(message_send.data(), &heatMapsBlob[0], length);
+      socket->send(message_send);
+    }
+
+    
+#if 0
+
+    if (detector != nullptr) {
+
+      cv::Mat image_bone = image_proc.clone();
+
+      std::vector<HumanPose> poses = hpe.extractPoses(pafsBlob, heatMapsBlob, image_proc.cols, image_proc.rows);
+      hpe.renderHumanPose(poses, image_bone);
+
+      cv::imshow("server bone", image_bone);
+
+    } else {
+      cv::imshow("server", image_proc);
+    }
 
     if (cv::waitKey(1) == 27) {
       throw std::runtime_error("ESC: exit server");
@@ -149,19 +209,23 @@ private:
   cv::VideoCapture capture;     ///< ビデオキャプチャ
   cv::Mat image_in;             ///< 入力画像
   cv::Mat image_proc;           ///< アフィン変換後画像
-   cv::Mat affine_matrix;       ///< アフィン変換行列
+  cv::Mat image_send;           ///< 送信画像
+  cv::Mat affine_matrix;        ///< アフィン変換行列
 
-  const bool loop;
-  const bool flip;
-  const int width;
-  const int height;
-  const int start;
-  const int frames;
-
-  int frame_number; 
+  const bool loop;              ///< ループするか?
+  const bool flip;              ///< フリップするか?
+  const int width;              ///< 出力画像幅
+  const int height;             ///< 出力画像高さ
+  const int start_frame;        ///< スタートフレーム
+  const int end_frame;          ///< エンドフレーム
+  int num_queue;                ///< OpenVINO推論のキューの数
   
-   BackgroundSubtraction *backgroundsubtraction; ///< 背景差分
-  bool background;                               ///< 背景シェアフラグ
+  int frame_number;             ///< 出力フレーム番号
+
+  ov::Core core;                ///< OpenVINO core
+  BoneDetection* detector;      ///< DNN bone Detector
+  
+  BackgroundSubtraction *backgroundsubtraction; ///< 背景差分
 };
 
 /// Local Variables: ///
