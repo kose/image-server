@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2022 KOSEKI Yoshinori
+// Copyright (C) 2020-2023 KOSEKI Yoshinori
 ///
 /// @file  image-server.cpp
 /// @brief 動画像サーバ
@@ -20,7 +20,6 @@ DEFINE_string(port, "5555", "ZMQ server port number");
 DEFINE_string(i, (std::string)HOME_DIR + "/GoogleDrive/movies/1024x600_shinyokohama2.mp4", "movie filename");
 DEFINE_bool(loop, false, "Do loop?");
 DEFINE_bool(flip, false, "Do flip?");
-DEFINE_bool(bone, false, "Do bonedetect?");
 
 DEFINE_int32(width, 1024, "width of output image");
 DEFINE_int32(height, 600, "width of output image"); // 1024x600: WSVGA(Wide-SVGA) 約16:10
@@ -41,7 +40,7 @@ int main(int argc, char *argv[])
     gflags::ParseCommandLineFlags(&argc, &argv, true);
 
     ImageServe imageserve(FLAGS_port, FLAGS_loop, FLAGS_flip, FLAGS_i, FLAGS_width, FLAGS_height, FLAGS_rotate, FLAGS_scale,
-                          FLAGS_mx, FLAGS_my, FLAGS_start, FLAGS_frames, FLAGS_bone);
+                          FLAGS_mx, FLAGS_my, FLAGS_start, FLAGS_frames);
 
     for (int frame_number = 0; ;frame_number++) {
 

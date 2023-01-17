@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2022 KOSEKI Yoshinori
+// Copyright (C) 2020-2023 KOSEKI Yoshinori
 ///
 /// @file  image-server.hpp
 /// @brief 動画像サーバ
@@ -20,7 +20,7 @@ public:
 
   // コンストラクタ
   ImageServe (const std::string port, const bool loop, const bool flip, const std::string moviefile, const int width, const int height,
-              const double rotate, const double scale, const int mx, const int my, int start_frame, int end_frame, bool bonedetect) :
+              const double rotate, const double scale, const int mx, const int my, int start_frame, int end_frame) :
     loop(loop), flip(flip), width(width), height(height), start_frame(start_frame), end_frame(end_frame), num_queue(1)
   {
     context = new zmq::context_t(1);
@@ -46,16 +46,13 @@ public:
     
     backgroundsubtraction = new BackgroundSubtraction("");
 
-    if (bonedetect) {
-      detector = new BoneDetection(core, "CPU", (std::string)HOME_DIR + "/openvino/IR/FP16/human-pose-estimation-0001.xml", num_queue);
-    } else {
-      detector = nullptr;
-    }
+    detector_bone = new BoneDetection(core, "CPU", (std::string)HOME_DIR + "/openvino/IR/FP16/human-pose-estimation-0001.xml", num_queue);
   }
 
   // デストラクタ
   ~ImageServe() {
     delete backgroundsubtraction;
+    delete detector_bone;
   }
 
   //
@@ -63,7 +60,7 @@ public:
   //
   int get_mode(const char* str)
   {
-    std::vector<std::string> mode_table {"foreground", "background", "pafsBlob", "heatMapsBlob"};
+    std::vector<std::string> mode_table {"foreground", "background", "bonedetect", "pafsBlob", "heatMapsBlob"};
 
     for (int i = 0; i <  mode_table.size(); i++) {
       if (std::strcmp(str, mode_table.at(i).c_str()) == 0) {
@@ -98,7 +95,7 @@ public:
     //
     // input image
     //
-    if (mode == get_mode("foreground") || image_in.empty()) {
+    if (image_in.empty() || mode == get_mode("foreground") || mode == get_mode("bonedetect")) {
 
       capture >> image_in;
 
@@ -125,26 +122,26 @@ public:
       if (flip) {
         cv::flip(image_proc, image_proc, 1);
       }
-      //
-      //
-      //
-      if (detector != nullptr) {
-        detector->Inference(image_proc);
-        image_proc = detector->getResults(pafsBlob, heatMapsBlob);
-      }
+
+      image_send = image_proc;
     }
 
+    // bonedetect
+    if (mode == get_mode("bonedetect")) {
+      detector_bone->Inference(image_proc);
+      image_send = detector_bone->getResults(pafsBlob, heatMapsBlob);
+    }
+
+    // background
+    if (mode == get_mode("background")) {
+      image_send = backgroundsubtraction->run(image_proc);
+    }
+  
     //
     // send JPEG stream: foreground or background
     //
-    if (mode == get_mode("foreground") || mode == get_mode("background")) {
+    if (mode == get_mode("foreground") || mode == get_mode("background") || mode == get_mode("bonedetect")) {
 
-      if (mode == get_mode("background")) {
-        image_send = backgroundsubtraction->run(image_proc);
-      } else {
-        image_send = image_proc;
-      }
-      
       // make jpeg
       std::vector<unsigned char> buff;
       std::vector<int> param = std::vector<int>(2);
@@ -168,6 +165,7 @@ public:
       memcpy(message_send.data(), &pafsBlob[0], length);
       socket->send(message_send);
     }
+    
     if (mode == get_mode("heatMapsBlob")) {
       int length = HPEOpenPose::n_heatMap * sizeof(float);
       zmq::message_t message_send(length);
@@ -177,18 +175,16 @@ public:
 
     
 #if 0
-
-    if (detector != nullptr) {
-
-      cv::Mat image_bone = image_proc.clone();
+    if (mode == get_mode("bonedetect")) {
+    
+      cv::Mat image_bone = image_send.clone();
 
       std::vector<HumanPose> poses = hpe.extractPoses(pafsBlob, heatMapsBlob, image_proc.cols, image_proc.rows);
       hpe.renderHumanPose(poses, image_bone);
 
       cv::imshow("server bone", image_bone);
-
     } else {
-      cv::imshow("server", image_proc);
+      cv::imshow("server foreground", image_proc);
     }
 
     if (cv::waitKey(1) == 27) {
@@ -196,7 +192,7 @@ public:
     }
 #endif
 
-    frame_number++;
+  frame_number++;
     
     return true;
   }
@@ -223,8 +219,7 @@ private:
   int frame_number;             ///< 出力フレーム番号
 
   ov::Core core;                ///< OpenVINO core
-  BoneDetection* detector;      ///< DNN bone Detector
-  
+  BoneDetection* detector_bone; ///< DNN bone Detector
   BackgroundSubtraction *backgroundsubtraction; ///< 背景差分
 };
 
