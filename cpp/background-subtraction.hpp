@@ -20,7 +20,7 @@ class BackgroundSubtraction {
 public:
 
   /// コンストラクタ
-  BackgroundSubtraction(const std::string& filename_background) :
+  BackgroundSubtraction(const std::string filename_background) :
     filename_background(filename_background)
   {
     frame_number = 0;
@@ -94,7 +94,7 @@ public:
 
 private:
   int frame_number;                       ///< フレーム番号
-  const std::string& filename_background; ///< backup BG image
+  const std::string filename_background; ///< backup BG image
 
   static const bool doSmoothMask = true;  ///< スムージング
   static const bool doUpdateModel = true; ///< 背景モデル更新
