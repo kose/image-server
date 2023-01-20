@@ -60,7 +60,7 @@ public:
   //
   int get_mode(const char* str)
   {
-    std::vector<std::string> mode_table {"foreground", "background", "bonedetect", "pafsBlob", "heatMapsBlob"};
+    std::vector<std::string> mode_table {"foreground", "background", "bonedetect", "boneBlob"};
 
     for (int i = 0; i <  mode_table.size(); i++) {
       if (std::strcmp(str, mode_table.at(i).c_str()) == 0) {
@@ -157,20 +157,21 @@ public:
     }
 
     //
-    // send bone
+    // send bone Blob
     //
-    if (mode == get_mode("pafsBlob")) {
-      int length = HPEOpenPose::n_pafs * sizeof(float);
-      zmq::message_t message_send(length);
-      memcpy(message_send.data(), &pafsBlob[0], length);
-      socket->send(message_send);
-    }
-    
-    if (mode == get_mode("heatMapsBlob")) {
-      int length = HPEOpenPose::n_heatMap * sizeof(float);
-      zmq::message_t message_send(length);
-      memcpy(message_send.data(), &heatMapsBlob[0], length);
-      socket->send(message_send);
+    if (mode == get_mode("boneBlob")) {
+      {
+        int length = HPEOpenPose::n_pafs * sizeof(float);
+        zmq::message_t message_send(length);
+        memcpy(message_send.data(), &pafsBlob[0], length);
+        socket->send(message_send, ZMQ_SNDMORE); // 続く（マルチパート）
+      }
+      {
+        int length = HPEOpenPose::n_heatMap * sizeof(float);
+        zmq::message_t message_send(length);
+        memcpy(message_send.data(), &heatMapsBlob[0], length);
+        socket->send(message_send);
+      }
     }
 
     
