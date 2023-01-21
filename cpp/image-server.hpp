@@ -35,6 +35,8 @@ public:
 
     capture.set(cv::CAP_PROP_POS_FRAMES, start_frame); // 巻き戻し
 
+    capture >> image_in;
+    
     affine_matrix = cv::getRotationMatrix2D(cv::Point2f(0.0, 0.0), rotate, scale);
 
     affine_matrix.at<double>(0, 2) = affine_matrix.at<double>(0, 0) * mx + affine_matrix.at<double>(0, 1) * my + affine_matrix.at<double>(0, 2);
@@ -43,7 +45,7 @@ public:
     cerr << affine_matrix << endl;
 
     frame_number = 0;
-    
+
     backgroundsubtraction = new BackgroundSubtraction("");
 
     detector_bone = new BoneDetection(core, "CPU", (std::string)HOME_DIR + "/openvino/IR/FP16/human-pose-estimation-0001.xml", num_queue);
@@ -69,7 +71,7 @@ public:
     }
     return 0; // if none, ret 0
   }
-  
+
   // 1フレーム処理
   bool run()
   {
@@ -78,7 +80,7 @@ public:
     float pafsBlob[HPEOpenPose::n_pafs];        ///< keypoint pairwise relations (part affinity fields)
     float heatMapsBlob[HPEOpenPose::n_heatMap]; ///< keypoint heatmaps
     HPEOpenPose hpe("");
-    
+
     // receive pull request
     {
       zmq::message_t message_recv;
@@ -97,23 +99,20 @@ public:
     //
     if (image_in.empty() || mode == get_mode("foreground") || mode == get_mode("bonedetect")) {
 
-      capture >> image_in;
-
       if (image_in.empty() || frame_number > end_frame) {
         if (loop) {
           // cerr << "rewind " << frame_number << endl;
           capture.set(cv::CAP_PROP_POS_FRAMES, start_frame); // 巻き戻し
-          frame_number = 0;
           capture >> image_in;
         } else {
-          cerr << "------ end of movie -----" << endl;
-          // send JPEG buffer
+          // cerr << "------ end of movie: " << frame_number <<  " ----- " << endl;
+          // send JPEG buffer (empty image)
           zmq::message_t message_send(1);
           socket->send(message_send);
           return false;
         }
       }
-  
+
       //
       // アフィン変換
       //
@@ -136,30 +135,32 @@ public:
     if (mode == get_mode("background")) {
       image_send = backgroundsubtraction->run(image_proc);
     }
-  
+
     //
-    // send JPEG stream: foreground or background
+    // send JPEG stream: foreground, background, bonedetect
     //
-    if (mode == get_mode("foreground") || mode == get_mode("background") || mode == get_mode("bonedetect")) {
 
-      // make jpeg
-      std::vector<unsigned char> buff;
-      std::vector<int> param = std::vector<int>(2);
-      param[0] = cv::IMWRITE_JPEG_QUALITY;
-      param[1] = 90;                // default(95) 0-100
-      imencode(".jpg", image_send, buff, param);
+    // make jpeg
+    std::vector<unsigned char> buff;
+    std::vector<int> param = std::vector<int>(2);
+    param[0] = cv::IMWRITE_JPEG_QUALITY;
+    param[1] = 90;                // default(95) 0-100
+    imencode(".jpg", image_send, buff, param);
 
-      // send JPEG buffer
-      zmq::message_t message_send(buff.size());
-      memcpy(message_send.data(), &buff[0], buff.size());
+    // make JPEG buffer
+    zmq::message_t message_send(buff.size());
+    memcpy(message_send.data(), &buff[0], buff.size());
 
+    // send JPEG
+    if (mode == get_mode("foreground") || mode == get_mode("background")) {
       socket->send(message_send);
     }
 
-    //
-    // send bone Blob
-    //
-    if (mode == get_mode("boneBlob")) {
+    // send JPEG, detect bone heatmap
+    if (mode == get_mode("bonedetect")) {
+
+      socket->send(message_send, ZMQ_SNDMORE); // 続く（マルチパート）
+
       {
         int length = HPEOpenPose::n_pafs * sizeof(float);
         zmq::message_t message_send(length);
@@ -174,10 +175,9 @@ public:
       }
     }
 
-    
 #if 0
     if (mode == get_mode("bonedetect")) {
-    
+
       cv::Mat image_bone = image_send.clone();
 
       std::vector<HumanPose> poses = hpe.extractPoses(pafsBlob, heatMapsBlob, image_proc.cols, image_proc.rows);
@@ -193,7 +193,11 @@ public:
     }
 #endif
 
-  frame_number++;
+
+    if (mode != get_mode("background")) {
+      capture >> image_in;
+      frame_number++;
+    }
     
     return true;
   }
@@ -216,7 +220,7 @@ private:
   const int start_frame;        ///< スタートフレーム
   const int end_frame;          ///< エンドフレーム
   int num_queue;                ///< OpenVINO推論のキューの数
-  
+
   int frame_number;             ///< 出力フレーム番号
 
   ov::Core core;                ///< OpenVINO core

@@ -42,14 +42,14 @@ int main(int argc, char *argv[])
     ImageServe imageserve(FLAGS_port, FLAGS_loop, FLAGS_flip, FLAGS_i, FLAGS_width, FLAGS_height, FLAGS_rotate, FLAGS_scale,
                           FLAGS_mx, FLAGS_my, FLAGS_start, FLAGS_frames);
 
+  
     for (int frame_number = 0; ;frame_number++) {
 
       if (imageserve.run() == false) {
         break;
       }
-
 #if 0
-      if (frame_number % 1000 == 0) {
+      if (frame_number % 100 == 0) {
         cerr << "frame: " << frame_number << endl;
       }
 #endif
