@@ -78,7 +78,7 @@ case "$@" in
 	FLAGS_my="-my -380"
 	FLAGS_rotate="-rotate -18"
 	FLAGS_start="-start 87"
-	FLAGS_frames="-frames 3340"
+	FLAGS_frames="-frames 1670"
         ;;
 
     *ES0_1_A_20fps_fix.mp4*)
@@ -96,7 +96,7 @@ case "$@" in
 	FLAGS_my="-my 200"
 	FLAGS_rotate="-rotate 10"
 	FLAGS_start="-start 82"
-	FLAGS_frames="-frames 3340"
+	FLAGS_frames="-frames 1670"
         ;;
 
     *ES0_1_C.mp4*)
@@ -105,7 +105,7 @@ case "$@" in
 	FLAGS_my="-my 40"
 	FLAGS_rotate="-rotate 4"
 	FLAGS_start="-start 68"
-	FLAGS_frames="-frames 3340"
+	FLAGS_frames="-frames 1670"
         ;;
 
     *)
