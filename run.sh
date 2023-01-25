@@ -87,7 +87,7 @@ case "$@" in
 	FLAGS_my="-my -435"
 	FLAGS_rotate="-rotate -18"
 	FLAGS_start="-start 87"
-	FLAGS_frames="-frames 3340"
+	FLAGS_frames="-frames 1670"
         ;;
 
     *ES0_1_B.mp4*)
