@@ -101,11 +101,12 @@ public:
 
       if (image_in.empty() || frame_number > end_frame) {
         if (loop) {
-          // cerr << "rewind " << frame_number << endl;
+          // cerr << "rewind " << frame_number << << endl;
           capture.set(cv::CAP_PROP_POS_FRAMES, start_frame); // 巻き戻し
+          frame_number = start_frame;
           capture >> image_in;
         } else {
-          // cerr << "------ end of movie: " << frame_number <<  " ----- " << endl;
+          cerr << "------ end of movie: " << frame_number <<  " ----- " << endl;
           // send JPEG buffer (empty image)
           zmq::message_t message_send(1);
           socket->send(message_send);
