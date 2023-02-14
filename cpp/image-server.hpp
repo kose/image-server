@@ -44,7 +44,7 @@ public:
 
     cerr << affine_matrix << endl;
 
-    frame_number = 0;
+    frame_number = start_frame;
 
     backgroundsubtraction = new BackgroundSubtraction("");
 
